@@ -5,6 +5,7 @@ from model import LoadedModel
 from server.openai import create_router as create_openai_router
 from litestar import Litestar
 from litestar.openapi.config import OpenAPIConfig
+from litestar.config.cors import CORSConfig
 from gguf.constants import GGMLQuantizationType
 from constants import GGML_LOG_LEVEL
 
@@ -14,6 +15,7 @@ def main(
     port: int = 8000,
     context_length: int = 0,
     gpu_layers: int = 0,
+    n_threads: int = 1,
     mmap: bool = False,
     serve_openai: bool = True,
     serve_kobold: bool = True,
@@ -59,6 +61,7 @@ def main(
     model_params = llama_cpp.llama_model_params()
     model_params.n_gpu_layers = gpu_layers
     model_params.use_mmap = mmap
+    model_params.n_threads = n_threads
     context_params = llama_cpp.llama_context_params()
     context_params.n_ctx = context_length
     context_params.n_batch = 1
@@ -66,6 +69,8 @@ def main(
     context_params.type_v = kv_cache_type
     context_params.offload_kqv = offload_kqv
     loaded_model = LoadedModel.load_from_file(model, model_params, context_params, name=model)
+
+    llama_cpp.llama_set_n_threads(loaded_model.context, n_threads, n_threads)
 
     # Create the server
     routers = []
@@ -76,6 +81,7 @@ def main(
         # routers.append(create_kobold_router(loaded_model))
         pass
 
-    app = Litestar(route_handlers=routers, openapi_config=OpenAPIConfig(title="Dryad", version="0.1.0"), debug=True)
+    cors_config = CORSConfig(allow_origins=["*"])
+    app = Litestar(route_handlers=routers, openapi_config=OpenAPIConfig(title="Dryad", version="0.1.0"), cors_config=cors_config, debug=True)
 
     uvicorn.run(app, host=host, port=port, log_level="debug")
