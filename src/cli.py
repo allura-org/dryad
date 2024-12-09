@@ -8,6 +8,7 @@ from litestar.openapi.config import OpenAPIConfig
 from litestar.config.cors import CORSConfig
 from gguf.constants import GGMLQuantizationType
 from constants import GGML_LOG_LEVEL
+from server.well_known import create_router as create_well_known_router
 
 def main(
     model: str,
@@ -64,7 +65,7 @@ def main(
     model_params.n_threads = n_threads
     context_params = llama_cpp.llama_context_params()
     context_params.n_ctx = context_length
-    context_params.n_batch = 1
+    context_params.n_batch = 512
     context_params.type_k = kv_cache_type
     context_params.type_v = kv_cache_type
     context_params.offload_kqv = offload_kqv
@@ -73,7 +74,7 @@ def main(
     llama_cpp.llama_set_n_threads(loaded_model.context, n_threads, n_threads)
 
     # Create the server
-    routers = []
+    routers = [create_well_known_router(host, port)]
     if serve_openai:
         routers.append(create_openai_router(loaded_model))
     if serve_kobold:

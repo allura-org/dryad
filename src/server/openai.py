@@ -1,7 +1,7 @@
 from litestar import Router, get, post, Request
 
 from model import LoadedModel
-from samplers import apply_temperature_pre, apply_temperature_post
+from samplers import apply_temperature_pre
 
 def create_router(model: LoadedModel) -> Router:
     @get("/models")
@@ -19,7 +19,7 @@ def create_router(model: LoadedModel) -> Router:
         prompt = data["prompt"]
         n_tokens = data["max_tokens"]
         #temperature = data.get("temperature", 1.0)
-        temperature = 0.01
+        temperature = 0.7
         top_k = data.get("top_k", 0)
         top_p = data.get("top_p", 1)
 
@@ -28,6 +28,15 @@ def create_router(model: LoadedModel) -> Router:
             "after_softmax": []
         }
 
-        return model.generate(prompt, n_tokens, sampler_fns)
+        res = model.generate(prompt, n_tokens, sampler_fns)
+
+        return {
+            "id": "cmpl-123",
+            "object": "text_completion",
+            "created": 1714864800,
+            "model": model.get_model_name(),
+            "choices": [{"text": "".join(res)}],
+            "usage": {"prompt_tokens": 1, "completion_tokens": 1}
+        }
 
     return Router(path="/v1", route_handlers=[models, completions])

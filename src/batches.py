@@ -23,16 +23,16 @@ class Batch:
         self.batch.n_seq_id[self.batch.n_tokens] = len(seq_ids)
         for i in range(len(seq_ids)):
             self.batch.seq_id[self.batch.n_tokens][i] = seq_ids[i]
-        self.batch.logits[self.batch.n_tokens] = logits
+        self.batch.logits[self.batch.n_tokens] = int(logits)
 
         self.batch.n_tokens += 1
 
     def common_batch_clear(self) -> None:
         self.batch.n_tokens = 0
 
-    def add_tokens(self, tokens: ctypes.Array[llama_cpp.llama_token], last_logits: bool = True) -> None:
+    def set_tokens(self, tokens: list[llama_cpp.llama_token], last_logits: bool = True) -> None:
         for i in range(len(tokens)):
-            self.common_batch_add(tokens[i], i, [1, 0], False)
+            self.common_batch_add(tokens[i], self.batch.n_tokens, [1, 0], False)
         if last_logits:
             self.batch.logits[self.batch.n_tokens - 1] = True
 
