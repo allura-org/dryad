@@ -1,8 +1,8 @@
 from litestar import Router, get
 
-def create_router() -> Router:
+def create_router(host: str, port: int) -> Router:
     @get("/.well-known/serviceinfo")
-    async def serviceinfo(host: str, port: int) -> dict:
+    async def serviceinfo() -> dict:
         return {
             "version": 0.1,
             "software": {
